@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Know Your Headphone",
+    "slug": "know-your-headphone",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "knowyourheadphone",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#201533",
+    "primaryColor": "#0ce6f2",
+    "description": "Descubra o fone de ouvido ideal para jogos, música, filmes ou estudo.",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.raphael.knowyourheadphone"
+    },
+    "android": {
+      "package": "com.raphael.knowyourheadphone",
+      "adaptiveIcon": {
+        "backgroundColor": "#201533",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "Know Your Headphone",
+      "shortName": "KYH",
+      "lang": "pt-BR",
+      "display": "standalone",
+      "orientation": "portrait",
+      "themeColor": "#201533",
+      "backgroundColor": "#201533"
+    }
+  }
+}
