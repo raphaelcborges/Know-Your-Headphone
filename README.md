@@ -58,13 +58,10 @@ Para publicar nas lojas é preciso conta de desenvolvedor (Google Play: US$ 25 u
 | [mobile/src/components/Option.tsx](mobile/src/components/Option.tsx) | Linha de escolha: rótulo, dica e régua — sem caixa e sem ícone |
 | [mobile/src/components/Button.tsx](mobile/src/components/Button.tsx) | Botão secundário, discreto |
 | [mobile/src/components/PhoneFrame.tsx](mobile/src/components/PhoneFrame.tsx) | Moldura de celular no navegador desktop; invisível no aparelho |
-| [mobile/src/components/Campo.tsx](mobile/src/components/Campo.tsx) | Campo de formulário com rótulo, foco e erro |
 | [mobile/src/components/CartaoOpcao.tsx](mobile/src/components/CartaoOpcao.tsx) | Escolha em cartão, para as perguntas em grade |
 | [mobile/src/components/Acordeao.tsx](mobile/src/components/Acordeao.tsx) | Seção recolhível (usada na curadoria) |
 | [mobile/src/components/Especificacoes.tsx](mobile/src/components/Especificacoes.tsx) | Ficha técnica em lista de rótulo e valor |
 | [mobile/src/components/Transicao.tsx](mobile/src/components/Transicao.tsx) | Esmaecida e deslize a cada troca de tela |
-| [mobile/src/screens/AuthScreen.tsx](mobile/src/screens/AuthScreen.tsx) | Telas de entrar e criar conta, com validação |
-| [mobile/src/auth/AuthContext.tsx](mobile/src/auth/AuthContext.tsx) | **Autenticação provisória — não é real.** Troque antes de publicar |
 | [mobile/src/theme.ts](mobile/src/theme.ts) | Paleta Eulbink, degradês por tela e `StyleSheet` compartilhados |
 | [mobile/src/data/products.ts](mobile/src/data/products.ts) | **O catálogo — é aqui que você adiciona fones** |
 | [mobile/src/data/catalog.ts](mobile/src/data/catalog.ts) | Atividades, faixas de preço e lógica de filtro |
@@ -90,47 +87,17 @@ Para publicar nas lojas é preciso conta de desenvolvedor (Google Play: US$ 25 u
 - **Logo com fundo transparente.** Foi extraída de `bg1.png` (branco sobre azul virou canal alfa) para [mobile/assets/logo.png](mobile/assets/logo.png), e serve tanto à tela inicial quanto aos ícones do app e do PWA.
 - **Layout de celular de verdade:** respeita safe area (notch e barra de gestos), rola quando o conteúdo não cabe e se adapta a qualquer tamanho de tela — no lugar da janela fixa de 360×690.
 
-## Contas (Supabase)
+## Favoritos e alertas
 
-Entrar e criar conta usam **Supabase Auth**, com e-mail e senha. Ninguém é obrigado a ter conta: há "Usar sem conta" no formulário, e a recomendação funciona deslogado.
+Não existe conta nem servidor. Os fones salvos e os alertas de preço ficam no próprio aparelho, via AsyncStorage (no navegador, `localStorage`) — ver [FavoritosContext.tsx](mobile/src/favoritos/FavoritosContext.tsx). O app inteiro é estático: funciona offline depois da primeira visita e não tem chave nem `.env` para configurar.
 
-### Configuração
+A contrapartida é que os salvos não sincronizam entre aparelhos e somem se a pessoa limpar os dados do navegador.
 
-As chaves ficam em `mobile/.env`, fora do controle de versão. Copie o modelo e preencha:
+## Mind the Headphone
 
-```bash
-cp mobile/.env.example mobile/.env
-```
+[mobile/src/data/mindtheheadphone.ts](mobile/src/data/mindtheheadphone.ts) guarda as classificações das listas de recomendação do [Mind the Headphone](https://www.mindtheheadphone.com.br/recomendacoes) — assinatura sonora, formato (intra, earbud, over-ear), conexão e link do review em vídeo. Os comentários e os links de loja (afiliados) do site **não** são usados.
 
-Os valores estão em **Supabase → Project Settings → API**:
-
-| Variável | Onde achar |
-| --- | --- |
-| `EXPO_PUBLIC_SUPABASE_URL` | Project URL |
-| `EXPO_PUBLIC_SUPABASE_KEY` | Chave **publishable** (ou a legada **anon**) |
-
-> Nunca coloque aqui a chave **secret** / **service_role**: ela ignora as regras de acesso do banco e daria a qualquer pessoa com o app instalado poder total sobre os dados. Se ela vazar, rotacione no painel.
-
-Sem as variáveis o app continua funcionando — só as telas de conta ficam indisponíveis, com aviso na tela.
-
-### Tabela de favoritos
-
-Rode [mobile/supabase/01-favoritos.sql](mobile/supabase/01-favoritos.sql) uma vez no SQL Editor do Supabase. Ele cria a tabela e liga **RLS** com policies que limitam cada pessoa às próprias linhas — sem isso, qualquer um com a chave pública leria os favoritos de todo mundo.
-
-### Confirmação de e-mail e limite de envio
-
-Por padrão o Supabase exige confirmar o endereço antes do primeiro login; nesse caso o app mostra "Conta criada, confirme seu e-mail".
-
-O SMTP embutido do Supabase manda **pouquíssimos e-mails por hora** e é explicitamente só para desenvolvimento. Estourando o limite, o app mostra "Muitas tentativas seguidas. Espere um pouco." — é resposta do servidor, não erro do app. Saídas:
-
-- **Para testar agora:** desligue **Authentication → Sign In / Providers → Confirm email**. Sem e-mail de confirmação não há limite de envio, e o cadastro já entra direto.
-- **Para valer:** configure um SMTP próprio (Resend, SendGrid, Postmark) em **Authentication → Emails → SMTP Settings**. Sem isso, ninguém consegue se cadastrar em escala.
-
-## Favoritos
-
-Quem está logado pode salvar fones: botão **Salvar** na tela do produto e a lista em **Seus salvos**, pelo atalho na tela inicial. Deslogado, o botão vira "Entrar para salvar" e leva ao login.
-
-A gravação é otimista — o botão responde na hora e volta atrás se o servidor recusar. Se a tabela ainda não existir, o app diz isso em vez de falhar em silêncio.
+Esses dados só preenchem o que falta: o que estiver em `products.ts` sempre ganha. Modelos recomendados lá que ainda não estão no catálogo ficam listados em [mobile/scripts/modelos-mth-faltando.txt](mobile/scripts/modelos-mth-faltando.txt), no formato que o `npm run buscar` espera.
 
 ## Curadoria e ficha técnica
 
@@ -227,4 +194,4 @@ npm run precos -- --de precos.json --aplicar
 
 As atividades "filme" e "estudo" ainda reaproveitam os modelos de uso geral. Os preços originais vieram da raspagem de **19/02/2025** feita pelos `api_*.py`.
 
-O código Flet original (`main.py`, `telas.py`, `api_*.py`, os `.json`) segue na raiz como referência histórica.
+O código Flet original (`main.py`, `telas.py`, `api_*.py`, os `.json`) saiu da pasta; está no primeiro commit do Git e no repositório antigo.

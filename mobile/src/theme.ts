@@ -350,37 +350,7 @@ export const styles = StyleSheet.create({
   },
 
   // ---- formulários ----
-  campo: { marginBottom: 18 },
-  campoRotulo: {
-    color: colors.textFaint,
-    fontSize: 11,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  campoEntrada: {
-    color: colors.text,
-    fontSize: 17,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.ruleStrong,
-  },
-  campoEntradaFoco: { borderBottomColor: colors.accent },
-  campoEntradaErro: { borderBottomColor: palette.blue },
-  campoErro: { color: palette.cyan, fontSize: 12, marginTop: 6 },
 
-  formAviso: {
-    color: colors.textFaint,
-    fontSize: 12,
-    lineHeight: 18,
-    borderLeftWidth: 2,
-    borderLeftColor: palette.steel,
-    paddingLeft: 12,
-    marginBottom: 24,
-  },
-  formAcoes: { gap: 12, marginTop: 8 },
-  formTroca: { color: colors.textMuted, fontSize: 14, textAlign: "center", paddingVertical: 12 },
-  formTrocaForte: { color: colors.accent, fontWeight: "700" },
 
   // ---- barra de progresso das perguntas ----
   progressoBloco: { marginTop: 7, marginBottom: 2 },
@@ -399,20 +369,6 @@ export const styles = StyleSheet.create({
   },
 
   // ---- conta, na tela inicial ----
-  contaLinha: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 12,
-  },
-  contaNome: { color: colors.textMuted, fontSize: 13 },
-  contaAcao: {
-    color: colors.accent,
-    fontSize: 11,
-    letterSpacing: 1.6,
-    textTransform: "uppercase",
-    fontWeight: "700",
-  },
 
   // ---- grade de escolhas (duas colunas), no lugar da lista ----
   grade: { flexDirection: "row", flexWrap: "wrap", gap: 11, marginTop: 2 },
@@ -441,10 +397,6 @@ export const styles = StyleSheet.create({
   gradeAcao: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 10, marginTop: 10, borderTopWidth: 1, borderTopColor: colors.rule },
   gradeAcaoTexto: { color: colors.textFaint, fontSize: 9, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase" },
   guestNote: { color: colors.textFaint, fontSize: 12, textAlign: "center", lineHeight: 17, marginTop: -2 },
-  authDivider: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 4 },
-  authDividerLine: { flex: 1, height: 1, backgroundColor: colors.rule },
-  authDividerText: { color: colors.textFaint, fontSize: 11 },
-  loginPrompt: { color: colors.textMuted, fontSize: 13, textAlign: "center", marginTop: 1 },
   analysisPage: { flex: 1, justifyContent: "center", gap: 32, paddingVertical: 40 },
   analysisOrb: { width: 88, height: 88, borderRadius: 44, borderWidth: 1, borderColor: "rgba(168,216,223,0.34)", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(168,216,223,0.07)", shadowColor: colors.accent, shadowOpacity: 0.18, shadowRadius: 24 },
   analysisOrbInner: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.accent },

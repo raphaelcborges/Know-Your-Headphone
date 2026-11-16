@@ -2,11 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { BackHandler, Image, Linking, Pressable, Share, Text, TextInput, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { supabase } from "./src/lib/supabase";
-import { AuthProvider, useAuth } from "./src/auth/AuthContext";
 import { FavoritosProvider, useFavoritos } from "./src/favoritos/FavoritosContext";
 import { BotaoFavorito } from "./src/components/BotaoFavorito";
-import { AuthScreen } from "./src/screens/AuthScreen";
 import { Transicao } from "./src/components/Transicao";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Button } from "./src/components/Button";
@@ -49,8 +46,6 @@ import { GRADIENTS, styles } from "./src/theme";
 
 type Step =
   | "inicio"
-  | "entrar"
-  | "registrar"
   | "atividade"
   | "preco"
   | "tipo"
@@ -87,16 +82,13 @@ const ICMS_IMPORT_GROUPS = [
 
 export default function App() {
   return (
-    <AuthProvider>
-      <FavoritosProvider>
-        <Fluxo />
-      </FavoritosProvider>
-    </AuthProvider>
+    <FavoritosProvider>
+      <Fluxo />
+    </FavoritosProvider>
   );
 }
 
 function Fluxo() {
-  const { usuario, sair } = useAuth();
   const favoritos = useFavoritos();
   const [step, setStep] = useState<Step>("inicio");
   const [choices, setChoices] = useState<Choices>({});
@@ -106,9 +98,6 @@ function Fluxo() {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [alertPrice, setAlertPrice] = useState("");
   const [alertSaved, setAlertSaved] = useState(false);
-  const [reviewScores, setReviewScores] = useState({ sound: "", comfort: "", microphone: "" });
-  const [reviewComment, setReviewComment] = useState("");
-  const [reviewStatus, setReviewStatus] = useState("");
   const [analysisStage, setAnalysisStage] = useState(0);
   const [returnToSummary, setReturnToSummary] = useState(false);
 
@@ -146,8 +135,6 @@ function Fluxo() {
   const goBack = useCallback(() => {
     switch (step) {
       case "favoritos":
-      case "entrar":
-      case "registrar":
         setStep("inicio");
         return true;
       case "atividade":
@@ -232,45 +219,15 @@ function Fluxo() {
           </View>
           <View style={styles.heroFooter}>
             <Cta label="Descobrir meu fone" onPress={() => setStep("atividade")} />
-            {usuario ? (
-              <>
-                <Button
-                  label={`Seus salvos (${favoritos.produtos.length})`}
-                  onPress={() => setStep("favoritos")}
-                />
-                <View style={styles.contaLinha}>
-                  <Text style={styles.contaNome}>Você está em {usuario.email}</Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => void sair().catch(() => {})}
-                    hitSlop={12}
-                  >
-                    <Text style={styles.contaAcao}>Sair</Text>
-                  </Pressable>
-                </View>
-              </>
-            ) : (
-              <>
-                <Button label="Entrar" onPress={() => setStep("entrar")} />
-                <Text style={styles.guestNote}>Não precisa criar uma conta para fazer o teste.</Text>
-              </>
-            )}
+            {favoritos.produtos.length > 0 ? (
+              <Button
+                label={`Seus salvos (${favoritos.produtos.length})`}
+                onPress={() => setStep("favoritos")}
+              />
+            ) : null}
+            <Text style={styles.guestNote}>Sem cadastro: o que você salvar fica neste aparelho.</Text>
           </View>
         </Screen>
-      </Shell>
-    );
-  }
-
-  if (step === "entrar" || step === "registrar") {
-    return (
-      <Shell chave={step}>
-        <AuthScreen
-          modo={step}
-          onTrocarModo={(modo) => setStep(modo)}
-          onPronto={() => setStep("inicio")}
-          onVoltar={() => setStep("inicio")}
-          onGuest={() => setStep("atividade")}
-        />
       </Shell>
     );
   }
@@ -283,7 +240,7 @@ function Fluxo() {
           title="Seus salvos"
           subtitle={
             favoritos.produtos.length > 0
-              ? `${favoritos.produtos.length} fone(s) guardados na sua conta.`
+              ? `${favoritos.produtos.length} fone(s) guardados neste aparelho.`
               : undefined
           }
           onBack={goBack}
@@ -699,7 +656,7 @@ function Fluxo() {
               <View style={styles.matchExplanation}>
                 <Text style={styles.matchExplanationLabel}>Por que combina com você</Text>
                 <View style={styles.matchReasons}>
-                  {recommendation.breakdown.filter((item) => item.points === item.maxPoints).slice(0, 3).map((item) => (
+                  {[...recommendation.breakdown.filter((item) => !item.requisito && item.points === item.maxPoints), ...recommendation.breakdown.filter((item) => item.requisito)].slice(0, 3).map((item) => (
                     <View key={item.label} style={styles.matchReasonRow}>
                       <Text style={styles.matchReasonCheck}>✓</Text>
                       <View style={styles.matchReasonCopy}>
@@ -717,12 +674,12 @@ function Fluxo() {
                           <Text style={styles.scoreBreakdownLabel}>{item.label}</Text>
                           <Text style={styles.scoreBreakdownExplanation}>{item.explanation}</Text>
                         </View>
-                        <Text style={item.points === item.maxPoints ? styles.scoreBreakdownPointsFull : styles.scoreBreakdownPoints}>
-                          +{item.points}/{item.maxPoints}
+                        <Text style={item.requisito || item.points === item.maxPoints ? styles.scoreBreakdownPointsFull : styles.scoreBreakdownPoints}>
+                          {item.requisito ? "✓" : `+${item.points}/${item.maxPoints}`}
                         </Text>
                       </View>
                     ))}
-                    <Text style={styles.scoreBreakdownNote}>A pontuação usa somente informações disponíveis no catálogo. Critérios ainda não confirmados recebem pontuação parcial.</Text>
+                    <Text style={styles.scoreBreakdownNote}>Orçamento, uso e formato são filtros: todo fone da lista já atende. A porcentagem vem dos outros critérios e usa só informações do catálogo; o que ainda não foi confirmado recebe pontuação parcial.</Text>
                   </View>
                 </Acordeao>
               </View>
@@ -758,7 +715,7 @@ function Fluxo() {
             </View>
             <View style={styles.primaryActions}>
               {product.stores?.[0] && <Cta label="Ver ofertas" onPress={() => Linking.openURL(product.stores![0].url)} />}
-              <BotaoFavorito produtoId={product.id} onPrecisaEntrar={() => setStep("entrar")} />
+              <BotaoFavorito produtoId={product.id} />
             </View>
           </View>
 
@@ -848,31 +805,6 @@ function Fluxo() {
             <Text style={styles.detailsText}>ANC reduz ruídos externos usando microfones. TWS é um fone Bluetooth totalmente sem fios. Assinatura sonora descreve quais regiões do som recebem mais destaque. Palco sonoro é a sensação de espaço e posição dos sons.</Text>
           </Acordeao>
 
-          <Acordeao titulo="Avaliar este fone">
-            {usuario ? (
-              <View style={styles.customPrice}>
-                <Text style={styles.detailsText}>Dê notas de 1 a 5. A avaliação passa por moderação antes de ser publicada.</Text>
-                <TextInput value={reviewScores.sound} onChangeText={(sound) => setReviewScores((prev) => ({ ...prev, sound: sound.replace(/[^1-5]/g, "").slice(0, 1) }))} placeholder="Som (1 a 5)" placeholderTextColor="rgba(255,255,255,0.42)" keyboardType="numeric" style={styles.customPriceInput} />
-                <TextInput value={reviewScores.comfort} onChangeText={(comfort) => setReviewScores((prev) => ({ ...prev, comfort: comfort.replace(/[^1-5]/g, "").slice(0, 1) }))} placeholder="Conforto (1 a 5)" placeholderTextColor="rgba(255,255,255,0.42)" keyboardType="numeric" style={styles.customPriceInput} />
-                <TextInput value={reviewScores.microphone} onChangeText={(microphone) => setReviewScores((prev) => ({ ...prev, microphone: microphone.replace(/[^1-5]/g, "").slice(0, 1) }))} placeholder="Microfone (opcional)" placeholderTextColor="rgba(255,255,255,0.42)" keyboardType="numeric" style={styles.customPriceInput} />
-                <TextInput value={reviewComment} onChangeText={setReviewComment} placeholder="Conte sua experiência (opcional)" placeholderTextColor="rgba(255,255,255,0.42)" multiline maxLength={1000} style={styles.customPriceInput} />
-                <Button label="Enviar avaliação" onPress={() => {
-                  const sound = Number(reviewScores.sound);
-                  const comfort = Number(reviewScores.comfort);
-                  if (!sound || !comfort) { setReviewStatus("Preencha som e conforto com notas de 1 a 5."); return; }
-                  if (!supabase) { setReviewStatus("Configure o Supabase para enviar avaliações."); return; }
-                  void supabase.from("avaliacoes").upsert({
-                    user_id: usuario.id, produto_id: product.id, som: sound, conforto: comfort,
-                    microfone: reviewScores.microphone ? Number(reviewScores.microphone) : null,
-                    comentario: reviewComment.trim() || null, status: "pendente",
-                  }, { onConflict: "user_id,produto_id" }).then(({ error }) => setReviewStatus(error ? "Não foi possível enviar. Ative a migração 02 no Supabase." : "Avaliação enviada para moderação."));
-                }} />
-                {reviewStatus ? <Text style={styles.recommendationWarning}>{reviewStatus}</Text> : null}
-              </View>
-            ) : (
-              <Button label="Entre para avaliar" onPress={() => setStep("entrar")} />
-            )}
-          </Acordeao>
             </View>
           </Acordeao>
         </Screen>

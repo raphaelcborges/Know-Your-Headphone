@@ -198,9 +198,9 @@ export function rankProducts(preferences: RecommendationPreferences): Recommenda
   return candidates
     .map((product) => {
       const breakdown: Recommendation["breakdown"] = [
-        { label: "Orçamento", points: 25, maxPoints: 25, explanation: maxPrice ? `Dentro do limite de ${formatPrice(maxPrice)}` : `Dentro da faixa ${range.label.toLowerCase()}` },
-        { label: "Uso principal", points: 20, maxPoints: 20, explanation: `Indicado para ${ACTIVITY_LABELS[activity].toLowerCase()}` },
-        { label: "Formato", points: 10, maxPoints: 10, explanation: "É do tipo que você escolheu" },
+        { label: "Orçamento", points: 0, maxPoints: 0, requisito: true, explanation: maxPrice ? `Dentro do limite de ${formatPrice(maxPrice)}` : `Dentro da faixa ${range.label.toLowerCase()}` },
+        { label: "Uso principal", points: 0, maxPoints: 0, requisito: true, explanation: `Indicado para ${ACTIVITY_LABELS[activity].toLowerCase()}` },
+        { label: "Formato", points: 0, maxPoints: 0, requisito: true, explanation: "É do tipo que você escolheu" },
       ];
       const reasons = [breakdown[1].explanation, breakdown[0].explanation];
       let warning: string | undefined;
@@ -276,9 +276,14 @@ export function rankProducts(preferences: RecommendationPreferences): Recommenda
       }
       breakdown.push({ label: "Ambiente", points: environmentPoints, maxPoints: 10, explanation: environmentExplanation });
 
-      const score = breakdown.reduce((total, item) => total + item.points, 0);
+      // Orçamento, uso e formato já filtraram a lista: a porcentagem mede só o
+      // que de fato diferencia um fone do outro.
+      const criterios = breakdown.filter((item) => !item.requisito);
+      const pontos = criterios.reduce((total, item) => total + item.points, 0);
+      const maximo = criterios.reduce((total, item) => total + item.maxPoints, 0);
+      const compatibility = Math.round((pontos / maximo) * 100);
 
-      return { product, compatibility: Math.max(1, Math.min(100, score)), reasons: reasons.slice(0, 3), warning, breakdown };
+      return { product, compatibility: Math.max(1, Math.min(100, compatibility)), reasons: reasons.slice(0, 3), warning, breakdown };
     })
     .sort((a, b) => b.compatibility - a.compatibility || a.product.price - b.product.price);
 }

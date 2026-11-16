@@ -1,20 +1,13 @@
 import { Pressable, Text, View } from "react-native";
-import { useAuth } from "../auth/AuthContext";
 import { useFavoritos } from "../favoritos/FavoritosContext";
 import { styles } from "../theme";
 
 interface BotaoFavoritoProps {
   produtoId: string;
-  /** Chamado quando é preciso ter conta para salvar. */
-  onPrecisaEntrar: () => void;
 }
 
-export function BotaoFavorito({ produtoId, onPrecisaEntrar }: BotaoFavoritoProps) {
-  const { usuario, disponivel } = useAuth();
+export function BotaoFavorito({ produtoId }: BotaoFavoritoProps) {
   const { ehFavorito, alternar, erro } = useFavoritos();
-
-  if (!disponivel) return null;
-
   const salvo = ehFavorito(produtoId);
 
   return (
@@ -22,10 +15,7 @@ export function BotaoFavorito({ produtoId, onPrecisaEntrar }: BotaoFavoritoProps
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected: salvo }}
-        onPress={() => {
-          if (!usuario) onPrecisaEntrar();
-          else void alternar(produtoId);
-        }}
+        onPress={() => void alternar(produtoId)}
         style={({ pressed }) => [
           styles.favoritoBotao,
           salvo && styles.favoritoBotaoAtivo,
@@ -33,9 +23,7 @@ export function BotaoFavorito({ produtoId, onPrecisaEntrar }: BotaoFavoritoProps
         ]}
       >
         <View style={[styles.favoritoMarca, salvo && styles.favoritoMarcaAtiva]} />
-        <Text style={styles.favoritoTexto}>
-          {!usuario ? "Entrar para salvar" : salvo ? "Salvo" : "Salvar"}
-        </Text>
+        <Text style={styles.favoritoTexto}>{salvo ? "Salvo" : "Salvar"}</Text>
       </Pressable>
       {erro && <Text style={styles.favoritoAviso}>{erro}</Text>}
     </View>

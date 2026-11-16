@@ -1,16 +1,16 @@
 /**
- * Favoritos de quem está logado, guardados no Supabase.
+ * Favoritos guardados no próprio aparelho (AsyncStorage; no navegador, localStorage).
  *
- * O catálogo continua no app; aqui só trafegam ids. A lista é mantida em
- * memória e escrita de forma otimista — o botão responde na hora e volta atrás
- * se o servidor recusar.
+ * Sem conta e sem servidor: o catálogo vive no app e aqui só ficam os ids.
+ * A lista carrega uma vez ao abrir e é regravada inteira a cada mudança.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { useAuth } from "../auth/AuthContext";
-import { supabase } from "../lib/supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PRODUCTS } from "../data/catalog";
 import type { Product } from "../data/types";
+
+const CHAVE = "kyh:favoritos";
 
 interface FavoritosContextValue {
   ids: Set<string>;
@@ -23,82 +23,38 @@ interface FavoritosContextValue {
 
 const FavoritosContext = createContext<FavoritosContextValue | null>(null);
 
-function traduzir(mensagem: string, codigo?: string): string {
-  // 42P01 = tabela não existe: o SQL de instalação ainda não foi rodado.
-  if (codigo === "42P01" || mensagem.includes("does not exist")) {
-    return "A tabela de favoritos ainda não foi criada no Supabase.";
-  }
-  if (mensagem.toLowerCase().includes("row-level security")) {
-    return "O banco recusou a gravação. Confira as policies da tabela.";
-  }
-  if (mensagem.toLowerCase().includes("fetch") || mensagem.toLowerCase().includes("network")) {
-    return "Sem conexão com o servidor.";
-  }
-  return mensagem;
-}
-
 export function FavoritosProvider({ children }: { children: ReactNode }) {
-  const { usuario } = useAuth();
   const [ids, setIds] = useState<Set<string>>(new Set());
-  const [carregando, setCarregando] = useState(false);
+  const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Entrou: busca a lista. Saiu: esquece tudo, sem deixar rastro na tela.
   useEffect(() => {
-    if (!supabase || !usuario) {
-      setIds(new Set());
+    AsyncStorage.getItem(CHAVE)
+      .then((salvo) => {
+        const lista: unknown = salvo ? JSON.parse(salvo) : [];
+        if (Array.isArray(lista)) setIds(new Set(lista.filter((id): id is string => typeof id === "string")));
+      })
+      .catch(() => setErro("Não foi possível ler os fones salvos neste aparelho."))
+      .finally(() => setCarregando(false));
+  }, []);
+
+  const alternar = useCallback(async (produtoId: string) => {
+    let proximo = new Set<string>();
+    setIds((atual) => {
+      proximo = new Set(atual);
+      if (proximo.has(produtoId)) proximo.delete(produtoId);
+      else proximo.add(produtoId);
+      return proximo;
+    });
+    try {
+      await AsyncStorage.setItem(CHAVE, JSON.stringify([...proximo]));
       setErro(null);
-      return;
+    } catch {
+      setErro("Não foi possível salvar neste aparelho.");
     }
+  }, []);
 
-    let cancelado = false;
-    setCarregando(true);
-
-    supabase
-      .from("favoritos")
-      .select("produto_id")
-      .order("criado_em", { ascending: false })
-      .then(({ data, error }) => {
-        if (cancelado) return;
-        if (error) setErro(traduzir(error.message, error.code));
-        else {
-          setIds(new Set(data.map((linha) => linha.produto_id as string)));
-          setErro(null);
-        }
-        setCarregando(false);
-      });
-
-    return () => {
-      cancelado = true;
-    };
-  }, [usuario]);
-
-  const alternar = useCallback(
-    async (produtoId: string) => {
-      if (!supabase || !usuario) return;
-
-      const salvando = !ids.has(produtoId);
-      const anterior = ids;
-
-      // Otimista: a tela reage antes da rede responder.
-      const proximo = new Set(ids);
-      if (salvando) proximo.add(produtoId);
-      else proximo.delete(produtoId);
-      setIds(proximo);
-      setErro(null);
-
-      const { error } = salvando
-        ? await supabase.from("favoritos").insert({ usuario_id: usuario.id, produto_id: produtoId })
-        : await supabase.from("favoritos").delete().eq("produto_id", produtoId);
-
-      if (error) {
-        setIds(anterior);
-        setErro(traduzir(error.message, error.code));
-      }
-    },
-    [ids, usuario],
-  );
-
+  // Mantém a ordem do catálogo e ignora ids de modelos que saíram dele.
   const produtos = useMemo(() => PRODUCTS.filter((p) => ids.has(p.id)), [ids]);
   const ehFavorito = useCallback((produtoId: string) => ids.has(produtoId), [ids]);
 

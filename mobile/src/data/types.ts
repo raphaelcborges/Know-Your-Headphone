@@ -60,6 +60,8 @@ export interface Recommendation {
     points: number;
     maxPoints: number;
     explanation: string;
+    /** Filtro que todo fone da lista já cumpre — não entra na porcentagem. */
+    requisito?: boolean;
   }[];
 }
 
